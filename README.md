@@ -15,7 +15,7 @@ The key innovation is **delegated signing**: the agent holds its own private key
 ## Installation
 
 ```bash
-openclaw plugins install @crossmint/openclaw
+openclaw plugins install @crossmint/openclaw-wallet
 ```
 
 ## Configuration
@@ -26,7 +26,7 @@ Enable the plugin in `~/.openclaw/.openclaw.json5`:
 {
   plugins: {
     entries: {
-      "crossmint": {
+      "openclaw-wallet": {
         enabled: true
       }
     }
@@ -149,9 +149,9 @@ The agent will:
 openclaw plugins list
 
 # Check plugin info
-openclaw plugins info crossmint
+openclaw plugins info openclaw-wallet
 
 # Enable/disable
-openclaw plugins enable crossmint
-openclaw plugins disable crossmint
+openclaw plugins enable openclaw-wallet
+openclaw plugins disable openclaw-wallet
 ```

@@ -1,8 +1,9 @@
 {
-  "id": "crossmint",
+  "id": "openclaw-wallet",
   "name": "Crossmint",
   "description": "Solana wallet integration using Crossmint smart wallets with delegated signing.",
-  "skills": ["./skills"],
+  "version": "0.2.2",
+  "skills": ["skills/crossmint"],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

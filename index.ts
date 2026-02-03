@@ -12,7 +12,7 @@ import {
 import { crossmintConfigSchema } from "./src/config.js";
 
 const plugin = {
-  id: "crossmint",
+  id: "openclaw-wallet",
   name: "Crossmint Wallet",
   description:
     "Solana wallet integration with Crossmint. Manage wallets, check balances, and send tokens using delegated signing.",
@@ -64,7 +64,7 @@ const plugin = {
     });
 
     api.logger.info("Crossmint wallet plugin loaded", {
-      environment: config.environment,
+      environment: "staging",
     });
   },
 };
