@@ -7,10 +7,6 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "delegationUrl": {
-        "type": "string",
-        "description": "URL of the web app where users complete wallet setup and delegation"
-      },
       "environment": {
         "type": "string",
         "enum": ["staging"],
@@ -20,11 +16,6 @@
     }
   },
   "uiHints": {
-    "delegationUrl": {
-      "label": "Delegation URL",
-      "placeholder": "https://your-app.com/delegate",
-      "help": "URL of the web app where users authorize the agent (or set CROSSMINT_DELEGATION_URL env)"
-    },
     "environment": {
       "label": "Environment",
       "help": "Only staging (Solana devnet) supported for now. Production coming soon."

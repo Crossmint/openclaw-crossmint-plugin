@@ -258,14 +258,6 @@ Agent:
 - Check wallet address matches the web app
 - Ensure sufficient balance for transfers
 
-### "delegationUrl is required"
-
-Plugin not configured. Set in config or environment:
-
-```bash
-export CROSSMINT_DELEGATION_URL="https://your-delegation-app.com"
-```
-
 ## Security Notes
 
 - Private keys are stored locally at `~/.openclaw/crossmint-wallets/`

@@ -29,7 +29,6 @@ Configure the plugin in `~/.openclaw/.openclaw.json5`:
       "crossmint": {
         enabled: true,
         config: {
-          delegationUrl: "https://your-delegation-app.com",
           environment: "staging"  // only staging (devnet) supported for now
         }
       }
@@ -42,16 +41,7 @@ Configure the plugin in `~/.openclaw/.openclaw.json5`:
 
 | Option | Required | Default | Description |
 |--------|----------|---------|-------------|
-| `delegationUrl` | Yes | - | URL of your delegation web app |
 | `environment` | No | `staging` | Only `staging` (Solana devnet) supported for now |
-
-### Environment Variables
-
-You can also set configuration via environment variables:
-
-```bash
-export CROSSMINT_DELEGATION_URL="https://your-delegation-app.com"
-```
 
 ## Usage
 
@@ -63,7 +53,7 @@ Ask the agent: "Set up my Crossmint wallet"
 
 The agent will:
 1. Generate a local Solana keypair (ed25519)
-2. Provide a URL with the public key: `{delegationUrl}?publicKey={agentPublicKey}`
+2. Provide a URL with the public key for delegation setup
 
 **Step 2: Complete setup on the web app**
 
@@ -153,9 +143,6 @@ The agent will:
 
 **"Wallet not fully configured"**
 - Complete the web setup flow and run `crossmint_configure` with wallet address and API key
-
-**"delegationUrl is required"**
-- Set `delegationUrl` in plugin config or `CROSSMINT_DELEGATION_URL` environment variable
 
 **"Failed to get balance" or "Failed to send"**
 - Verify the API key is correct

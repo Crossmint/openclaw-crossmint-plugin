@@ -20,7 +20,7 @@ import {
   type CrossmintApiConfig,
   type CreateOrderRequest,
 } from "./api.js";
-import type { CrossmintPluginConfig } from "./config.js";
+import { DELEGATION_URL, type CrossmintPluginConfig } from "./config.js";
 
 function getAgentId(ctx: OpenClawPluginToolContext): string {
   return ctx.agentId || "main";
@@ -36,7 +36,7 @@ function getApiConfig(walletData: { apiKey?: string }, environment: "staging"): 
   };
 }
 
-export function createCrossmintSetupTool(_api: OpenClawPluginApi, config: CrossmintPluginConfig) {
+export function createCrossmintSetupTool(_api: OpenClawPluginApi, _config: CrossmintPluginConfig) {
   return {
     name: "crossmint_setup",
     description:
@@ -74,7 +74,7 @@ export function createCrossmintSetupTool(_api: OpenClawPluginApi, config: Crossm
 
       // Build the delegation URL with the public key
       const delegationUrl = buildDelegationUrl(
-        config.delegationUrl,
+        DELEGATION_URL,
         walletData.address,
       );
 
@@ -417,7 +417,7 @@ export function createCrossmintWalletInfoTool(_api: OpenClawPluginApi, config: C
 
       if (!configured) {
         const delegationUrl = buildDelegationUrl(
-          config.delegationUrl,
+          DELEGATION_URL,
           walletData.address,
         );
 

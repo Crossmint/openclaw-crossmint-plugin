@@ -1,7 +1,9 @@
 export type CrossmintPluginConfig = {
-  delegationUrl: string;
   environment: "staging"; // Only staging (Solana devnet) is supported for now
 };
+
+// Hardcoded delegation URL
+export const DELEGATION_URL = "https://www.lobster.cash/";
 
 function assertAllowedKeys(value: Record<string, unknown>, allowed: string[], label: string) {
   const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
@@ -11,34 +13,13 @@ function assertAllowedKeys(value: Record<string, unknown>, allowed: string[], la
   throw new Error(`${label} has unknown keys: ${unknown.join(", ")}`);
 }
 
-function resolveEnvVars(value: string): string {
-  return value.replace(/\$\{([^}]+)\}/g, (_, envVar) => {
-    const envValue = process.env[envVar];
-    if (!envValue) {
-      throw new Error(`Environment variable ${envVar} is not set`);
-    }
-    return envValue;
-  });
-}
-
 export const crossmintConfigSchema = {
   parse(value: unknown): CrossmintPluginConfig {
-    // Allow empty/missing config if env vars are set
+    // Allow empty/missing config
     const cfg = (value && typeof value === "object" && !Array.isArray(value))
       ? (value as Record<string, unknown>)
       : {};
-    assertAllowedKeys(cfg, ["delegationUrl", "environment"], "crossmint config");
-
-    // Delegation URL - required
-    let delegationUrl = cfg.delegationUrl as string | undefined;
-    if (!delegationUrl) {
-      delegationUrl = process.env.CROSSMINT_DELEGATION_URL;
-    }
-    if (!delegationUrl) {
-      throw new Error(
-        "delegationUrl is required. Set it in plugin config or CROSSMINT_DELEGATION_URL env var.",
-      );
-    }
+    assertAllowedKeys(cfg, ["environment"], "crossmint config");
 
     // Environment - only staging (Solana devnet) is supported for now
     const environment = cfg.environment as string | undefined;
@@ -49,16 +30,10 @@ export const crossmintConfigSchema = {
     }
 
     return {
-      delegationUrl: resolveEnvVars(delegationUrl),
       environment: "staging" as const,
     };
   },
   uiHints: {
-    delegationUrl: {
-      label: "Delegation URL",
-      placeholder: "https://your-app.com/delegate",
-      help: "URL of the web app where users authorize the agent (or use ${CROSSMINT_DELEGATION_URL})",
-    },
     environment: {
       label: "Environment",
       help: "Only staging (Solana devnet) is supported for now",
