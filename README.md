@@ -20,28 +20,21 @@ openclaw plugins install @crossmint/openclaw
 
 ## Configuration
 
-Configure the plugin in `~/.openclaw/.openclaw.json5`:
+Enable the plugin in `~/.openclaw/.openclaw.json5`:
 
 ```json5
 {
   plugins: {
     entries: {
       "crossmint": {
-        enabled: true,
-        config: {
-          environment: "staging"  // only staging (devnet) supported for now
-        }
+        enabled: true
       }
     }
   }
 }
 ```
 
-### Configuration Options
-
-| Option | Required | Default | Description |
-|--------|----------|---------|-------------|
-| `environment` | No | `staging` | Only `staging` (Solana devnet) supported for now |
+> **Note:** Currently only Solana devnet (staging) is supported. Mainnet support coming soon.
 
 ## Usage
 

@@ -6,19 +6,6 @@
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": {
-      "environment": {
-        "type": "string",
-        "enum": ["staging"],
-        "default": "staging",
-        "description": "Crossmint environment (only staging/devnet supported for now)"
-      }
-    }
-  },
-  "uiHints": {
-    "environment": {
-      "label": "Environment",
-      "help": "Only staging (Solana devnet) supported for now. Production coming soon."
-    }
+    "properties": {}
   }
 }

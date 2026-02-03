@@ -20,7 +20,7 @@ import {
   type CrossmintApiConfig,
   type CreateOrderRequest,
 } from "./api.js";
-import { DELEGATION_URL, type CrossmintPluginConfig } from "./config.js";
+import { DELEGATION_URL, ENVIRONMENT, type CrossmintPluginConfig } from "./config.js";
 
 function getAgentId(ctx: OpenClawPluginToolContext): string {
   return ctx.agentId || "main";
@@ -97,7 +97,7 @@ export function createCrossmintSetupTool(_api: OpenClawPluginApi, _config: Cross
   };
 }
 
-export function createCrossmintConfigureTool(_api: OpenClawPluginApi, config: CrossmintPluginConfig) {
+export function createCrossmintConfigureTool(_api: OpenClawPluginApi, _config: CrossmintPluginConfig) {
   return {
     name: "crossmint_configure",
     description:
@@ -153,7 +153,7 @@ export function createCrossmintConfigureTool(_api: OpenClawPluginApi, config: Cr
           content: [
             {
               type: "text",
-              text: `Wallet configured successfully for agent "${agentId}"!\n\nLocal signer: ${walletData.address}\nSmart wallet: ${walletData.smartWalletAddress}\nEnvironment: ${config.environment}\n\nYou can now use crossmint_balance and crossmint_send.`,
+              text: `Wallet configured successfully for agent "${agentId}"!\n\nLocal signer: ${walletData.address}\nSmart wallet: ${walletData.smartWalletAddress}\nEnvironment: ${ENVIRONMENT}\n\nYou can now use crossmint_balance and crossmint_send.`,
             },
           ],
           details: {
@@ -161,7 +161,7 @@ export function createCrossmintConfigureTool(_api: OpenClawPluginApi, config: Cr
             agentId,
             localSignerAddress: walletData.address,
             smartWalletAddress: walletData.smartWalletAddress,
-            environment: config.environment,
+            environment: ENVIRONMENT,
           },
         };
       } catch (error) {
@@ -178,7 +178,7 @@ export function createCrossmintConfigureTool(_api: OpenClawPluginApi, config: Cr
   };
 }
 
-export function createCrossmintBalanceTool(_api: OpenClawPluginApi, config: CrossmintPluginConfig) {
+export function createCrossmintBalanceTool(_api: OpenClawPluginApi, _config: CrossmintPluginConfig) {
   return {
     name: "crossmint_balance",
     description: "Check the balance of the Crossmint Solana wallet for this agent.",
@@ -216,7 +216,7 @@ export function createCrossmintBalanceTool(_api: OpenClawPluginApi, config: Cros
       }
 
       try {
-        const apiConfig = getApiConfig(walletData, config.environment);
+        const apiConfig = getApiConfig(walletData, ENVIRONMENT);
         const balances = await getWalletBalance(apiConfig, walletData.smartWalletAddress!);
 
         const balanceText = balances
@@ -252,7 +252,7 @@ export function createCrossmintBalanceTool(_api: OpenClawPluginApi, config: Cros
   };
 }
 
-export function createCrossmintSendTool(_api: OpenClawPluginApi, config: CrossmintPluginConfig) {
+export function createCrossmintSendTool(_api: OpenClawPluginApi, _config: CrossmintPluginConfig) {
   return {
     name: "crossmint_send",
     description:
@@ -325,7 +325,7 @@ export function createCrossmintSendTool(_api: OpenClawPluginApi, config: Crossmi
       }
 
       try {
-        const apiConfig = getApiConfig(walletData, config.environment);
+        const apiConfig = getApiConfig(walletData, ENVIRONMENT);
 
         // Get Solana keypair for signing
         const keypair = getKeypair(agentId);
@@ -387,7 +387,7 @@ export function createCrossmintSendTool(_api: OpenClawPluginApi, config: Crossmi
   };
 }
 
-export function createCrossmintWalletInfoTool(_api: OpenClawPluginApi, config: CrossmintPluginConfig) {
+export function createCrossmintWalletInfoTool(_api: OpenClawPluginApi, _config: CrossmintPluginConfig) {
   return {
     name: "crossmint_wallet_info",
     description: "Get detailed information about the agent's Crossmint Solana wallet.",
@@ -442,7 +442,7 @@ export function createCrossmintWalletInfoTool(_api: OpenClawPluginApi, config: C
         content: [
           {
             type: "text",
-            text: `Wallet info for agent "${agentId}":\n\nLocal signer: ${walletData.address}\nSmart wallet: ${walletData.smartWalletAddress}\nChain: Solana\nEnvironment: ${config.environment}\nCreated: ${walletData.createdAt}\nConfigured: ${walletData.configuredAt}`,
+            text: `Wallet info for agent "${agentId}":\n\nLocal signer: ${walletData.address}\nSmart wallet: ${walletData.smartWalletAddress}\nChain: Solana\nEnvironment: ${ENVIRONMENT}\nCreated: ${walletData.createdAt}\nConfigured: ${walletData.configuredAt}`,
           },
         ],
         details: {
@@ -450,7 +450,7 @@ export function createCrossmintWalletInfoTool(_api: OpenClawPluginApi, config: C
           localSignerAddress: walletData.address,
           smartWalletAddress: walletData.smartWalletAddress,
           chain: "solana",
-          environment: config.environment,
+          environment: ENVIRONMENT,
           createdAt: walletData.createdAt,
           configuredAt: walletData.configuredAt,
           configured: true,
@@ -460,7 +460,7 @@ export function createCrossmintWalletInfoTool(_api: OpenClawPluginApi, config: C
   };
 }
 
-export function createCrossmintTxStatusTool(_api: OpenClawPluginApi, config: CrossmintPluginConfig) {
+export function createCrossmintTxStatusTool(_api: OpenClawPluginApi, _config: CrossmintPluginConfig) {
   return {
     name: "crossmint_tx_status",
     description:
@@ -521,7 +521,7 @@ export function createCrossmintTxStatusTool(_api: OpenClawPluginApi, config: Cro
       }
 
       try {
-        const apiConfig = getApiConfig(walletData, config.environment);
+        const apiConfig = getApiConfig(walletData, ENVIRONMENT);
 
         const tx = wait
           ? await waitForTransaction(apiConfig, walletData.smartWalletAddress!, transactionId, timeoutMs)
@@ -557,7 +557,7 @@ export function createCrossmintTxStatusTool(_api: OpenClawPluginApi, config: Cro
   };
 }
 
-export function createCrossmintBuyTool(_api: OpenClawPluginApi, config: CrossmintPluginConfig) {
+export function createCrossmintBuyTool(_api: OpenClawPluginApi, _config: CrossmintPluginConfig) {
   return {
     name: "crossmint_buy",
     description:
@@ -645,7 +645,7 @@ export function createCrossmintBuyTool(_api: OpenClawPluginApi, config: Crossmin
       }
 
       try {
-        const apiConfig = getApiConfig(walletData, config.environment);
+        const apiConfig = getApiConfig(walletData, ENVIRONMENT);
         const productLocator = buildAmazonProductLocator(productId);
 
         const orderRequest: CreateOrderRequest = {
@@ -703,7 +703,7 @@ export function createCrossmintBuyTool(_api: OpenClawPluginApi, config: Crossmin
   };
 }
 
-export function createCrossmintOrderStatusTool(_api: OpenClawPluginApi, config: CrossmintPluginConfig) {
+export function createCrossmintOrderStatusTool(_api: OpenClawPluginApi, _config: CrossmintPluginConfig) {
   return {
     name: "crossmint_order_status",
     description: "Check the status of a Crossmint order (Amazon purchase).",
@@ -745,7 +745,7 @@ export function createCrossmintOrderStatusTool(_api: OpenClawPluginApi, config: 
       }
 
       try {
-        const apiConfig = getApiConfig(walletData, config.environment);
+        const apiConfig = getApiConfig(walletData, ENVIRONMENT);
         const order = await getOrder(apiConfig, orderId);
 
         const productTitle = order.lineItems?.[0]?.metadata?.title || "Product";
