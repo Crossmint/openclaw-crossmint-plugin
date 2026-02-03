@@ -1,0 +1,33 @@
+{
+  "id": "crossmint",
+  "name": "Crossmint",
+  "description": "Solana wallet integration using Crossmint smart wallets with delegated signing.",
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "delegationUrl": {
+        "type": "string",
+        "description": "URL of the web app where users complete wallet setup and delegation"
+      },
+      "environment": {
+        "type": "string",
+        "enum": ["staging"],
+        "default": "staging",
+        "description": "Crossmint environment (only staging/devnet supported for now)"
+      }
+    }
+  },
+  "uiHints": {
+    "delegationUrl": {
+      "label": "Delegation URL",
+      "placeholder": "https://your-app.com/delegate",
+      "help": "URL of the web app where users authorize the agent (or set CROSSMINT_DELEGATION_URL env)"
+    },
+    "environment": {
+      "label": "Environment",
+      "help": "Only staging (Solana devnet) supported for now. Production coming soon."
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "@crossmint/openclaw",
+  "version": "0.1.0",
+  "description": "OpenClaw plugin for Solana wallet integration with Crossmint smart wallets",
+  "type": "module",
+  "main": "./index.ts",
+  "files": [
+    "index.ts",
+    "src/",
+    "skills/",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Crossmint/openclaw-crossmint-plugin"
+  },
+  "keywords": [
+    "openclaw",
+    "crossmint",
+    "solana",
+    "wallet",
+    "plugin",
+    "crypto",
+    "web3"
+  ],
+  "dependencies": {
+    "@solana/web3.js": "^1.98.0",
+    "bs58": "^6.0.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.1.26"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
