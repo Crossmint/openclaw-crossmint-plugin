@@ -27,9 +27,13 @@ const API_KEY = process.env.CROSSMINT_API_KEY || "";
 const PAYER_ADDRESS = process.env.PAYER_ADDRESS || ""; // Smart wallet address
 const SIGNER_PRIVATE_KEY = process.env.PAYER_PRIVATE_KEY || ""; // Delegated signer private key
 
-// Crossmint API base URLs (staging = devnet)
-const CROSSMINT_ORDERS_API = "https://staging.crossmint.com/api/2022-06-09";
-const CROSSMINT_WALLETS_API = "https://staging.crossmint.com/api/2025-06-09";
+// Crossmint API base URLs - depends on environment
+const CROSSMINT_ENV = process.env.CROSSMINT_ENV || "production";
+const CROSSMINT_BASE_URL = CROSSMINT_ENV === "staging"
+  ? "https://staging.crossmint.com/api"
+  : "https://www.crossmint.com/api";
+const CROSSMINT_ORDERS_API = `${CROSSMINT_BASE_URL}/2022-06-09`;
+const CROSSMINT_WALLETS_API = `${CROSSMINT_BASE_URL}/2025-06-09`;
 
 // Test product - can be overridden via environment variable
 const TEST_AMAZON_ASIN = process.env.TEST_AMAZON_ASIN || "B00AATAHY0";

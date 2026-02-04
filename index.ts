@@ -9,7 +9,7 @@ import {
   createCrossmintBuyTool,
   createCrossmintOrderStatusTool,
 } from "./src/tools.js";
-import { crossmintConfigSchema } from "./src/config.js";
+import { crossmintConfigSchema, ENVIRONMENT } from "./src/config.js";
 
 const plugin = {
   id: "openclaw-wallet",
@@ -64,7 +64,7 @@ const plugin = {
     });
 
     api.logger.info("Crossmint wallet plugin loaded", {
-      environment: "staging",
+      environment: ENVIRONMENT,
     });
   },
 };

@@ -26,7 +26,7 @@ function getAgentId(ctx: OpenClawPluginToolContext): string {
   return ctx.agentId || "main";
 }
 
-function getApiConfig(walletData: { apiKey?: string }, environment: "staging"): CrossmintApiConfig {
+function getApiConfig(walletData: { apiKey?: string }, environment: "staging" | "production"): CrossmintApiConfig {
   if (!walletData.apiKey) {
     throw new Error("Wallet not configured. Run crossmint_setup first and provide the API key.");
   }

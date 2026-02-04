@@ -12,13 +12,18 @@ import {
 /**
  * Live integration tests for Crossmint Amazon purchase API.
  *
- * Run with: CROSSMINT_API_KEY=your-key pnpm test extensions/crossmint/src/api.test.ts
+ * Run with: CROSSMINT_API_KEY=your-key pnpm test src/api.test.ts
  *
- * These tests make real API calls to Crossmint staging (devnet).
- * They require a valid client-side API key with orders.create scope.
+ * These tests make real API calls to Crossmint.
+ * They require a valid API key with orders.create scope.
+ *
+ * Environment:
+ *   CROSSMINT_ENV=staging  -> Uses devnet (staging.crossmint.com)
+ *   CROSSMINT_ENV=production (default) -> Uses mainnet (www.crossmint.com)
  */
 
 const LIVE = process.env.CROSSMINT_API_KEY || process.env.LIVE;
+const CROSSMINT_ENV = (process.env.CROSSMINT_ENV || "production") as "staging" | "production";
 
 describe("crossmint api", () => {
   describe("buildDelegationUrl", () => {
@@ -53,7 +58,7 @@ describe("crossmint api", () => {
   describe.skipIf(!LIVE)("live: createOrder", () => {
     const config: CrossmintApiConfig = {
       apiKey: process.env.CROSSMINT_API_KEY!,
-      environment: "staging",
+      environment: CROSSMINT_ENV,
     };
 
     // Generate a test keypair for the payer address
