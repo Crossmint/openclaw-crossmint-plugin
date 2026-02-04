@@ -3,7 +3,7 @@ import bs58 from "bs58";
 
 export type CrossmintApiConfig = {
   apiKey: string;
-  environment: "staging"; // Only staging (Solana devnet) supported for now
+  environment: "staging" | "production";
 };
 
 export type CrossmintBalance = {
@@ -26,9 +26,10 @@ export type CrossmintTransaction = {
   };
 };
 
-// Only staging (Solana devnet) is supported for now
-function getBaseUrl(_env: "staging"): string {
-  // Production URL reserved for future use: https://www.crossmint.com/api
+function getBaseUrl(env: "staging" | "production"): string {
+  if (env === "production") {
+    return "https://www.crossmint.com/api";
+  }
   return "https://staging.crossmint.com/api";
 }
 
@@ -106,14 +107,19 @@ export async function getTransactionStatus(
 
   const data = await response.json();
 
+  const txId = data.onChain?.txId;
+  const explorerLink = txId
+    ? config.environment === "staging"
+      ? `https://explorer.solana.com/tx/${txId}?cluster=devnet`
+      : `https://explorer.solana.com/tx/${txId}`
+    : undefined;
+
   return {
     id: data.id,
     status: data.status,
     hash: data.onChain?.txId || data.hash,
     txId: data.txId, // Top-level txId from API response
-    explorerLink: data.onChain?.txId
-      ? `https://explorer.solana.com/tx/${data.onChain.txId}?cluster=devnet`
-      : undefined,
+    explorerLink,
     onChain: data.onChain,
   };
 }

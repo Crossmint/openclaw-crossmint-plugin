@@ -1,6 +1,6 @@
 // Hardcoded configuration - no user config needed
 export const DELEGATION_URL = "https://www.lobster.cash/";
-export const ENVIRONMENT = "staging" as const;
+export const ENVIRONMENT = "production" as const;
 
 export type CrossmintPluginConfig = Record<string, never>;
 

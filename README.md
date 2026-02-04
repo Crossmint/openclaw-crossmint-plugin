@@ -35,7 +35,7 @@ Enable the plugin in `~/.openclaw/.openclaw.json5`:
 }
 ```
 
-> **Note:** Currently only Solana devnet (staging) is supported. Mainnet support coming soon.
+> **Note:** This plugin uses Solana mainnet (production) for real transactions.
 
 ## Usage
 
@@ -53,7 +53,7 @@ The agent will:
 
 1. Open the delegation URL in your browser
 2. The web app will:
-   - Create a Crossmint smart wallet on Solana devnet
+   - Create a Crossmint smart wallet on Solana
    - Add the agent's public key as a delegated signer
    - Show you the **wallet address** and **API key**
 
@@ -98,7 +98,7 @@ Price: 0.05 SOL
 Order ID: order_abc123
 Payment: completed
 
-Transaction: https://explorer.solana.com/tx/5x...?cluster=devnet
+Transaction: https://explorer.solana.com/tx/5x...
 
 Use crossmint_order_status to check delivery status.
 ```
@@ -172,7 +172,7 @@ All steps are handled automatically by the plugin.
 ┌─────────────────────────────────────────────────────────────┐
 │                    Crossmint Smart Wallet                    │
 ├─────────────────────────────────────────────────────────────┤
-│  - Deployed on Solana (devnet)                              │
+│  - Deployed on Solana                                       │
 │  - Agent's address registered as delegated signer           │
 │  - User retains admin control                               │
 │  - Holds SOL/USDC for purchases and transfers               │
@@ -198,14 +198,14 @@ All steps are handled automatically by the plugin.
 - Run `crossmint_configure` with wallet address and API key from the web app
 
 **"Failed to get balance" or "Failed to send"**
-- Verify the API key is correct (should start with `ck_staging_`)
+- Verify the API key is correct (should start with `ck_production_`)
 - Check that the wallet address matches the one shown in the web app
 - Ensure the wallet has sufficient balance
 
 **"Insufficient funds" (Amazon purchase)**
 - Check balance with `crossmint_balance`
 - Fund the wallet with more SOL or USDC
-- For devnet testing, use Solana faucets for test SOL
+- Fund the wallet with real SOL or USDC on Solana mainnet
 
 **"Timeout waiting for transaction to be broadcast"**
 - Check transaction status with `crossmint_tx_status`

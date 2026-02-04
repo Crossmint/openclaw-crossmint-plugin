@@ -1,6 +1,6 @@
 {
   "name": "@crossmint/openclaw-wallet",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "OpenClaw plugin for Solana wallet integration with Crossmint smart wallets",
   "type": "module",
   "main": "./index.ts",

@@ -8,7 +8,7 @@ metadata: { "openclaw": { "emoji": "💳" } }
 
 Manage Solana wallets using Crossmint smart wallets with delegated signing. The agent holds a local signing key, and users authorize it via a web-based delegation flow.
 
-> **Note:** Currently only **Solana devnet** (staging environment) is supported. Mainnet/production support coming soon.
+> **Note:** This plugin uses **Solana mainnet** (production) for real transactions.
 
 ## When to Activate
 
@@ -48,7 +48,7 @@ This generates a local ed25519 keypair and returns a delegation URL pointing to 
 ### Step 2: User completes web setup
 
 The user opens the delegation URL in their browser. The web app (lobster.cash) will:
-1. Create a Crossmint smart wallet on Solana devnet
+1. Create a Crossmint smart wallet on Solana
 2. Add the agent's public key as a delegated signer
 3. Display the **wallet address** and **API key** for the user to copy
 
@@ -190,7 +190,7 @@ Price: 0.05 SOL
 Order ID: order_abc123
 Payment: completed
 
-Transaction: https://explorer.solana.com/tx/5x...?cluster=devnet
+Transaction: https://explorer.solana.com/tx/5x...
 
 Shipping to:
 John Doe
@@ -360,7 +360,7 @@ Agent:
 
 ### "Failed to get balance" or "Failed to send"
 
-- Verify the API key is correct (should start with `ck_staging_` for devnet)
+- Verify the API key is correct (should start with `ck_production_`)
 - Check wallet address matches the one shown in the web app
 - Ensure sufficient balance for transfers
 
@@ -372,7 +372,7 @@ The wallet doesn't have enough SOL or USDC for the purchase.
 Agent:
 1. Use crossmint_balance to check current balance
 2. Ask user to fund the wallet with more SOL/USDC
-3. For devnet testing, use Solana faucets to get test SOL
+3. Fund the wallet with real SOL/USDC on Solana mainnet
 ```
 
 ### "Wrong product was purchased"
@@ -433,7 +433,7 @@ Agent:
 3. **Confirm product title after purchase** - Check that the returned product title matches what was requested
 4. **Always check balance before purchasing** - Avoid failed transactions due to insufficient funds
 5. **Confirm shipping address with user** - Double-check addresses for Amazon purchases
-6. **Get devnet tokens for testing** - Use Solana devnet faucets to get test SOL before trying purchases
+6. **Fund wallet before purchasing** - Ensure the wallet has enough SOL or USDC before attempting purchases
 7. **One wallet per agent** - Each agent ID gets its own keypair and wallet
 8. **Save the order ID** - Users should note the order ID to track delivery status later
 9. **Verify on-chain** - The explorer link lets users verify the payment transaction on Solana
