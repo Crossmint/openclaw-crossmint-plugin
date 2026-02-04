@@ -214,15 +214,24 @@ All steps are handled automatically by the plugin.
 ## Plugin Management
 
 ```bash
+# Install the plugin
+openclaw plugins install @crossmint/openclaw-wallet
+
+# Upgrade to latest version
+openclaw plugins update @crossmint/openclaw-wallet
+
 # List all plugins
 openclaw plugins list
 
-# Check plugin info
+# Check plugin info (shows current version)
 openclaw plugins info openclaw-wallet
 
 # Enable/disable
 openclaw plugins enable openclaw-wallet
 openclaw plugins disable openclaw-wallet
+
+# Uninstall
+openclaw plugins uninstall openclaw-wallet
 ```
 
 ## Supported Currencies
