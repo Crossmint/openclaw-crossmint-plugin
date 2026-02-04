@@ -17,6 +17,7 @@ export type CrossmintTransaction = {
   id: string;
   status: string;
   hash?: string;
+  txId?: string; // Top-level txId from API response
   explorerLink?: string;
   onChain?: {
     status?: string;
@@ -109,6 +110,7 @@ export async function getTransactionStatus(
     id: data.id,
     status: data.status,
     hash: data.onChain?.txId || data.hash,
+    txId: data.txId, // Top-level txId from API response
     explorerLink: data.onChain?.txId
       ? `https://explorer.solana.com/tx/${data.onChain.txId}?cluster=devnet`
       : undefined,
@@ -319,14 +321,19 @@ export type TransactionResponse = {
 // Headless Checkout API Functions (Delegated Signer Flow)
 // ============================================================================
 
+export type CreateOrderResponse = {
+  order: CrossmintOrder;
+  clientSecret: string;
+};
+
 /**
  * Step 1: Create an order for purchasing products (e.g., from Amazon)
- * Returns order with serializedTransaction to use in step 2
+ * Returns order with serializedTransaction and clientSecret for subsequent API calls
  */
 export async function createOrder(
   config: CrossmintApiConfig,
   request: CreateOrderRequest,
-): Promise<CrossmintOrder> {
+): Promise<CreateOrderResponse> {
   const response = await fetchCrossmint(config, "/2022-06-09/orders", {
     method: "POST",
     body: JSON.stringify(request),
@@ -337,9 +344,12 @@ export async function createOrder(
     throw new Error(`Failed to create order: ${error}`);
   }
 
-  // API returns { clientSecret, order } - extract the order
+  // API returns { clientSecret, order }
   const data = await response.json();
-  return data.order;
+  return {
+    order: data.order,
+    clientSecret: data.clientSecret,
+  };
 }
 
 /**
@@ -414,11 +424,17 @@ export async function submitApproval(
 export async function getOrder(
   config: CrossmintApiConfig,
   orderId: string,
+  clientSecret?: string,
 ): Promise<CrossmintOrder> {
+  const headers: Record<string, string> = {};
+  if (clientSecret) {
+    headers["Authorization"] = clientSecret;
+  }
+
   const response = await fetchCrossmint(
     config,
     `/2022-06-09/orders/${encodeURIComponent(orderId)}`,
-    { method: "GET" },
+    { method: "GET", headers },
   );
 
   if (!response.ok) {
@@ -430,19 +446,123 @@ export async function getOrder(
 }
 
 /**
+ * Step 5: Wait for transaction to be broadcast and get on-chain txId
+ * Polls the transaction status until we get the on-chain transaction ID
+ */
+export async function waitForTransactionBroadcast(
+  config: CrossmintApiConfig,
+  walletAddress: string,
+  transactionId: string,
+  timeoutMs: number = 30000,
+  pollIntervalMs: number = 2000,
+): Promise<string | null> {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeoutMs) {
+    const txStatus = await getTransactionStatus(config, walletAddress, transactionId);
+
+    // Check if transaction has been broadcast and we have the on-chain txId
+    if (txStatus.onChain?.txId) {
+      return txStatus.onChain.txId;
+    }
+
+    // Also check for txId directly on the response
+    if (txStatus.txId) {
+      return txStatus.txId;
+    }
+
+    // Check if status indicates completion
+    if (txStatus.status === "success" || txStatus.status === "completed") {
+      // Try to find txId in various places
+      const txId = txStatus.onChain?.txId || txStatus.txId || txStatus.hash;
+      if (txId) {
+        return txId;
+      }
+    }
+
+    // Check for failure
+    if (txStatus.status === "failed") {
+      throw new Error(`Transaction failed: ${JSON.stringify(txStatus)}`);
+    }
+
+    // Wait before polling again
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+
+  return null;
+}
+
+/**
+ * Step 6: Submit payment confirmation to Crossmint Orders API (CRITICAL!)
+ * This notifies Crossmint that the payment transaction has been submitted on-chain
+ */
+export async function submitPaymentConfirmation(
+  config: CrossmintApiConfig,
+  orderId: string,
+  onChainTxId: string,
+  clientSecret?: string,
+): Promise<CrossmintOrder> {
+  const headers: Record<string, string> = {};
+  if (clientSecret) {
+    headers["Authorization"] = clientSecret;
+  }
+
+  const response = await fetchCrossmint(
+    config,
+    `/2022-06-09/orders/${encodeURIComponent(orderId)}/payment`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        type: "crypto-tx-id",
+        txId: onChainTxId,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to submit payment confirmation: ${error}`);
+  }
+
+  return response.json();
+}
+
+export type PurchaseResult = {
+  order: CrossmintOrder;
+  transactionId: string;
+  onChainTxId: string;
+  explorerLink: string;
+};
+
+/**
  * Complete Amazon purchase flow with delegated signer
- * Combines all 3 API calls + local signing
+ *
+ * Steps:
+ * 1. Create order → returns serializedTransaction and clientSecret
+ * 2a. Create Crossmint transaction with serialized tx
+ * 2b. Sign the approval message locally with ed25519
+ * 2c. Submit approval to Crossmint
+ * 5. Wait for transaction to be broadcast → get on-chain txId
+ * 6. Submit txId to /payment endpoint (CRITICAL!)
+ *
+ * Returns the final order state after payment confirmation.
  */
 export async function purchaseProduct(
   config: CrossmintApiConfig,
   request: CreateOrderRequest,
   keypair: Keypair,
-): Promise<{ order: CrossmintOrder; transactionId: string }> {
+): Promise<PurchaseResult> {
   // Step 1: Create order
-  const order = await createOrder(config, request);
+  const { order, clientSecret } = await createOrder(config, request);
 
   const serializedTransaction = order.payment?.preparation?.serializedTransaction;
   if (!serializedTransaction) {
+    // Check for insufficient funds
+    const failureReason = (order.payment as { failureReason?: { code: string; message: string } })?.failureReason;
+    if (failureReason?.code === "insufficient-funds") {
+      throw new Error(`Insufficient funds: ${failureReason.message}`);
+    }
     throw new Error(
       `Order created but no serialized transaction returned. Payment status: ${order.payment?.status || "unknown"}`,
     );
@@ -461,14 +581,14 @@ export async function purchaseProduct(
     throw new Error("Transaction created but no message to sign");
   }
 
-  // Step 2 (local): Sign the message with ed25519
-  // Message is base58 encoded (Solana standard) - same as transfers
+  // Step 2b (local): Sign the message with ed25519
+  // Message is base58 encoded (Solana standard)
   const messageBytes = bs58.decode(messageToSign);
   const nacl = (await import("tweetnacl")).default;
   const signature = nacl.sign.detached(messageBytes, keypair.secretKey);
   const signatureBase58 = bs58.encode(signature);
 
-  // Step 2b: Submit approval
+  // Step 2c: Submit approval
   await submitApproval(
     config,
     request.payment.payerAddress,
@@ -477,7 +597,37 @@ export async function purchaseProduct(
     signatureBase58,
   );
 
-  return { order, transactionId: txResponse.id };
+  // Step 5: Wait for transaction to be broadcast and get on-chain txId
+  const onChainTxId = await waitForTransactionBroadcast(
+    config,
+    request.payment.payerAddress,
+    txResponse.id,
+    30000, // 30 second timeout
+  );
+
+  if (!onChainTxId) {
+    throw new Error("Timeout waiting for transaction to be broadcast on-chain");
+  }
+
+  // Step 6: Submit payment confirmation (CRITICAL!)
+  const updatedOrder = await submitPaymentConfirmation(
+    config,
+    order.orderId,
+    onChainTxId,
+    clientSecret,
+  );
+
+  const explorerLink =
+    config.environment === "staging"
+      ? `https://explorer.solana.com/tx/${onChainTxId}?cluster=devnet`
+      : `https://explorer.solana.com/tx/${onChainTxId}`;
+
+  return {
+    order: updatedOrder,
+    transactionId: txResponse.id,
+    onChainTxId,
+    explorerLink,
+  };
 }
 
 /**

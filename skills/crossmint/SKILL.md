@@ -43,14 +43,14 @@ User: "Set up my Crossmint wallet"
 Agent: Use crossmint_setup
 ```
 
-This generates a local ed25519 keypair and returns a delegation URL.
+This generates a local ed25519 keypair and returns a delegation URL pointing to `https://www.lobster.cash/configure?pubkey=<agent-public-key>`.
 
 ### Step 2: User completes web setup
 
-The user opens the delegation URL in their browser. The web app will:
-1. Create a Crossmint smart wallet
+The user opens the delegation URL in their browser. The web app (lobster.cash) will:
+1. Create a Crossmint smart wallet on Solana devnet
 2. Add the agent's public key as a delegated signer
-3. Display the **wallet address** and **API key**
+3. Display the **wallet address** and **API key** for the user to copy
 
 ### Step 3: Configure the agent
 
@@ -59,7 +59,7 @@ User: "My wallet address is X and API key is Y"
 Agent: Use crossmint_configure with walletAddress and apiKey
 ```
 
-Now the wallet is ready to use.
+Now the wallet is ready to use for balance checks, transfers, and Amazon purchases.
 
 ## Common Operations
 
@@ -70,7 +70,7 @@ User: "What's my wallet balance?"
 Agent: Use crossmint_balance
 ```
 
-Returns SOL, USDC, and other token balances.
+Returns SOL, USDC, and other token balances on the smart wallet.
 
 ### Send tokens
 
@@ -112,6 +112,19 @@ Agent: Use crossmint_wallet_info
 
 Buy products from Amazon using SOL or USDC from the agent's wallet. Crossmint acts as Merchant of Record, handling payments, shipping, and taxes.
 
+### How It Works (Under the Hood)
+
+When you use `crossmint_buy`, the plugin executes a 6-step delegated signer flow:
+
+1. **Create Order** - Crossmint creates an Amazon order and returns a payment transaction
+2. **Create Transaction** - The serialized transaction is submitted to Crossmint's wallet API
+3. **Sign Approval** - The agent signs an approval message locally using ed25519
+4. **Submit Approval** - The signed approval is sent to Crossmint
+5. **Wait for Broadcast** - Poll until the transaction is confirmed on-chain
+6. **Confirm Payment** - Submit the on-chain transaction ID to complete the order
+
+The entire flow happens automatically - the agent handles all signing and API calls.
+
 ### Buy a product
 
 ```
@@ -121,8 +134,36 @@ Agent: Use crossmint_buy with product ASIN and shipping address
 
 Required information:
 - Amazon product ASIN or URL
-- Recipient email
+- Recipient email (for order confirmation)
 - Full shipping address (name, street, city, postal code, country)
+
+### Successful Purchase Response
+
+When a purchase completes successfully, you'll receive:
+- **Order ID** - Use with `crossmint_order_status` to track delivery
+- **Transaction Explorer Link** - Solana explorer URL to verify the payment on-chain
+- **Payment Status** - Confirms payment was processed
+- **Product Details** - Title and price of the purchased item
+
+Example response:
+```
+✅ Purchase complete!
+
+Product: AmazonBasics USB Cable
+Price: 0.05 SOL
+Order ID: order_abc123
+Payment: completed
+
+Transaction: https://explorer.solana.com/tx/5x...?cluster=devnet
+
+Shipping to:
+John Doe
+123 Main St
+New York, NY 10001
+US
+
+Use crossmint_order_status to check delivery status.
+```
 
 ### Check order status
 
@@ -131,18 +172,27 @@ User: "What's the status of my order?"
 Agent: Use crossmint_order_status with the order ID
 ```
 
+Returns:
+- Order phase (quote, payment, delivery, completed)
+- Payment status
+- Delivery status
+- Tracking information (when available)
+
 ### Amazon Product Locator Formats
 
-- ASIN: `B00O79SKV6`
+All of these formats work:
+- ASIN only: `B00O79SKV6`
 - Full URL: `https://www.amazon.com/dp/B00O79SKV6`
+- With amazon: prefix: `amazon:B00O79SKV6`
 
 ### Amazon Order Restrictions
 
 Orders may fail if:
 - Item not sold by Amazon or verified seller
-- Item requires special shipping
-- Item is digital (ebooks, software, etc.)
+- Item requires special shipping (hazmat, oversized)
+- Item is digital (ebooks, software, music, etc.)
 - Item is from Amazon Fresh, Pantry, Pharmacy, or Subscribe & Save
+- Item is out of stock or unavailable for shipping to the address
 
 ## Tool Parameters
 
@@ -214,9 +264,9 @@ Orders may fail if:
   "addressLine1": "required - street address",
   "addressLine2": "optional - apt, suite, etc.",
   "city": "required",
-  "state": "optional - state/province code",
+  "state": "optional - state/province code (e.g., 'CA', 'NY')",
   "postalCode": "required",
-  "country": "required - e.g., 'US'",
+  "country": "required - ISO country code (e.g., 'US')",
   "currency": "optional - 'sol' or 'usdc' (default: 'usdc')",
   "agentId": "optional"
 }
@@ -248,27 +298,70 @@ Keypair exists but web setup wasn't completed.
 ```
 Agent:
 1. Use crossmint_wallet_info to get the delegation URL
-2. Ask user to complete web setup
-3. Use crossmint_configure with the wallet address and API key
+2. Ask user to complete web setup at the URL
+3. Use crossmint_configure with the wallet address and API key from the web app
 ```
 
 ### "Failed to get balance" or "Failed to send"
 
-- Verify the API key is correct
-- Check wallet address matches the web app
+- Verify the API key is correct (should start with `ck_staging_` for devnet)
+- Check wallet address matches the one shown in the web app
 - Ensure sufficient balance for transfers
+
+### "Insufficient funds" (Amazon purchase)
+
+The wallet doesn't have enough SOL or USDC for the purchase.
+
+```
+Agent:
+1. Use crossmint_balance to check current balance
+2. Ask user to fund the wallet with more SOL/USDC
+3. For devnet testing, use Solana faucets to get test SOL
+```
+
+### "Order created but no serialized transaction returned"
+
+The order was created but payment couldn't be prepared. This usually means:
+- Product is unavailable or restricted
+- Shipping address is invalid
+- Price changed during checkout
+
+### "Timeout waiting for transaction to be broadcast"
+
+The transaction was signed but didn't confirm on-chain within 30 seconds.
+
+```
+Agent:
+1. Use crossmint_tx_status to check the transaction status
+2. If still pending, wait longer or retry
+3. Check Solana network status for congestion
+```
 
 ## Security Notes
 
 - Private keys are stored locally at `~/.openclaw/crossmint-wallets/`
-- Keys never leave the agent's machine
+- Keys never leave the agent's machine - only signatures are sent to Crossmint
 - Uses ed25519 cryptography (Solana native)
-- Users retain admin control and can revoke delegation anytime
+- Users retain admin control and can revoke delegation anytime via the Crossmint dashboard
 - Always verify recipient addresses before sending
+- The API key grants limited permissions - only what the user authorized during delegation
 
 ## Best Practices
 
-1. **Always check balance before sending** - Avoid failed transactions
-2. **Confirm recipient with user** - Double-check addresses for large transfers
-3. **Get devnet tokens for testing** - Use Solana devnet faucets to get test SOL
-4. **One wallet per agent** - Each agent ID gets its own keypair
+1. **Always check balance before purchasing** - Avoid failed transactions due to insufficient funds
+2. **Confirm shipping address with user** - Double-check addresses for Amazon purchases
+3. **Get devnet tokens for testing** - Use Solana devnet faucets to get test SOL before trying purchases
+4. **One wallet per agent** - Each agent ID gets its own keypair and wallet
+5. **Save the order ID** - Users should note the order ID to track delivery status later
+6. **Verify on-chain** - The explorer link lets users verify the payment transaction on Solana
+
+## Supported Currencies
+
+For Amazon purchases:
+- **SOL** - Native Solana token
+- **USDC** - USD Coin stablecoin on Solana
+
+For transfers:
+- **SOL** - Native Solana token
+- **USDC** - USD Coin stablecoin
+- **Any SPL token** - Specify the token mint address

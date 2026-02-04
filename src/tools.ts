@@ -675,18 +675,22 @@ export function createCrossmintBuyTool(_api: OpenClawPluginApi, _config: Crossmi
         const productTitle = result.order.lineItems?.[0]?.metadata?.title || "Product";
         const totalPrice = result.order.quote?.totalPrice;
         const priceText = totalPrice ? `${totalPrice.amount} ${totalPrice.currency}` : "See order details";
+        const paymentStatus = result.order.payment?.status || result.order.phase;
 
         return {
           content: [
             {
               type: "text",
-              text: `Purchase initiated!\n\nProduct: ${productTitle}\nPrice: ${priceText}\nOrder ID: ${result.order.orderId}\nStatus: ${result.order.phase}\n\nShipping to:\n${recipientName}\n${addressLine1}${addressLine2 ? `\n${addressLine2}` : ""}\n${city}${state ? `, ${state}` : ""} ${postalCode}\n${country}\n\nUse crossmint_order_status to check delivery status.`,
+              text: `✅ Purchase complete!\n\nProduct: ${productTitle}\nPrice: ${priceText}\nOrder ID: ${result.order.orderId}\nPayment: ${paymentStatus}\n\nTransaction: ${result.explorerLink}\n\nShipping to:\n${recipientName}\n${addressLine1}${addressLine2 ? `\n${addressLine2}` : ""}\n${city}${state ? `, ${state}` : ""} ${postalCode}\n${country}\n\nUse crossmint_order_status to check delivery status.`,
             },
           ],
           details: {
             orderId: result.order.orderId,
             transactionId: result.transactionId,
+            onChainTxId: result.onChainTxId,
+            explorerLink: result.explorerLink,
             phase: result.order.phase,
+            paymentStatus,
             productLocator,
             totalPrice,
             recipient: orderRequest.recipient,
