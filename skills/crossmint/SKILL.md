@@ -112,6 +112,42 @@ Agent: Use crossmint_wallet_info
 
 Buy products from Amazon using SOL or USDC from the agent's wallet. Crossmint acts as Merchant of Record, handling payments, shipping, and taxes.
 
+### CRITICAL: Product Validation
+
+**ALWAYS validate that the product matches what the user requested before completing a purchase.**
+
+When a purchase completes, the response includes the product title. The agent MUST:
+
+1. **Compare the product title** with what the user asked for
+2. **If there's a mismatch**, inform the user immediately:
+   ```
+   ⚠️ The product found doesn't match your request.
+
+   You asked for: "Celsius Energy Drink"
+   Product found: "USB Cable Organizer"
+
+   This might be the wrong product. Would you like me to:
+   1. Search for the correct product on Amazon
+   2. Cancel and try a different ASIN
+   3. Proceed anyway (if this is actually correct)
+   ```
+3. **Never assume** - If the user says "buy Celsius" without an ASIN, search Amazon first to find the correct product
+4. **Confirm before payment** - For vague requests, always confirm the exact product before purchasing
+
+**Best Practice Flow:**
+```
+User: "Buy me some Celsius energy drinks"
+Agent:
+1. First, search Amazon for "Celsius energy drink" to find the correct ASIN
+2. Present options: "I found these Celsius products:
+   - B08P5H1FLX: Celsius Sparkling Orange (12-pack) - ~$25
+   - B07GX3GDN5: Celsius Variety Pack (12-pack) - ~$30
+   Which one would you like?"
+3. User confirms: "The variety pack"
+4. Agent uses crossmint_buy with the confirmed ASIN
+5. After purchase, verify the product title in the response matches
+```
+
 ### How It Works (Under the Hood)
 
 When you use `crossmint_buy`, the plugin executes a 6-step delegated signer flow:
@@ -177,6 +213,26 @@ Returns:
 - Payment status
 - Delivery status
 - Tracking information (when available)
+
+### Finding the Right Product
+
+When the user doesn't provide an ASIN:
+
+1. **Search Amazon first** - Use web search to find the product: `"[product name] site:amazon.com"`
+2. **Extract the ASIN** - Look for the 10-character alphanumeric code (e.g., B08P5H1FLX) in the URL
+3. **Confirm with user** - Show the product name, price estimate, and ask for confirmation
+4. **Then purchase** - Only call `crossmint_buy` after user confirms the correct product
+
+**Example:**
+```
+User: "Buy me Celsius energy drinks"
+Agent: Let me search Amazon for Celsius energy drinks...
+       [searches "Celsius energy drink site:amazon.com"]
+       I found: "CELSIUS Sparkling Orange Fitness Drink (12-pack)" - ASIN: B08P5H1FLX
+       Is this what you want? (Yes/No, or tell me a different product)
+User: "Yes"
+Agent: [calls crossmint_buy with B08P5H1FLX]
+```
 
 ### Amazon Product Locator Formats
 
@@ -319,6 +375,30 @@ Agent:
 3. For devnet testing, use Solana faucets to get test SOL
 ```
 
+### "Wrong product was purchased"
+
+The product title doesn't match what the user requested.
+
+**Prevention:**
+1. Always search for the correct ASIN before purchasing
+2. Confirm the product with the user before calling `crossmint_buy`
+3. After purchase, compare the product title in the response with user's request
+
+**If it happens:**
+```
+Agent:
+⚠️ I notice the product purchased doesn't match your request.
+
+You asked for: "Celsius Energy Drink"
+Product purchased: "USB Cable Organizer" (Order ID: xxx)
+
+Unfortunately, the payment has already been processed. You may need to:
+1. Contact Crossmint support to request a cancellation/refund
+2. Wait for delivery and return the item
+
+I apologize for this error. In the future, I'll confirm the exact product with you before purchasing.
+```
+
 ### "Order created but no serialized transaction returned"
 
 The order was created but payment couldn't be prepared. This usually means:
@@ -348,12 +428,15 @@ Agent:
 
 ## Best Practices
 
-1. **Always check balance before purchasing** - Avoid failed transactions due to insufficient funds
-2. **Confirm shipping address with user** - Double-check addresses for Amazon purchases
-3. **Get devnet tokens for testing** - Use Solana devnet faucets to get test SOL before trying purchases
-4. **One wallet per agent** - Each agent ID gets its own keypair and wallet
-5. **Save the order ID** - Users should note the order ID to track delivery status later
-6. **Verify on-chain** - The explorer link lets users verify the payment transaction on Solana
+1. **ALWAYS validate products before purchasing** - Never buy without confirming the product matches user intent
+2. **Search Amazon first for vague requests** - If user says "buy X" without an ASIN, search for the correct product first
+3. **Confirm product title after purchase** - Check that the returned product title matches what was requested
+4. **Always check balance before purchasing** - Avoid failed transactions due to insufficient funds
+5. **Confirm shipping address with user** - Double-check addresses for Amazon purchases
+6. **Get devnet tokens for testing** - Use Solana devnet faucets to get test SOL before trying purchases
+7. **One wallet per agent** - Each agent ID gets its own keypair and wallet
+8. **Save the order ID** - Users should note the order ID to track delivery status later
+9. **Verify on-chain** - The explorer link lets users verify the payment transaction on Solana
 
 ## Supported Currencies
 
